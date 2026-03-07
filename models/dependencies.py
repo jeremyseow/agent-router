@@ -6,7 +6,9 @@ class AgentDependencies:
     agent_name: str
     db_pool: asyncpg.Pool
 
+import typing
+
 @dataclass
 class RouterDependencies:
-    available_agents: list[str]
+    worker_registry: typing.Dict[str, typing.Any]
     db_pool: asyncpg.Pool

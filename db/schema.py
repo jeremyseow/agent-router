@@ -24,7 +24,8 @@ async def initialize_schema(pool: asyncpg.Pool):
             VALUES 
                 ('pm', 'You are an expert Project Manager. You break down tasks into subtasks and ensure all engineering output meets the user''s goals.', '{"read_fs", "write_fs"}'),
                 ('engineer', 'You are an expert Software Engineer. You write python code, test, and perform technical execution.', '{"read_fs", "write_fs", "api_get", "api_post"}'),
-                ('financial_analyst', 'You are an expert Financial Analyst. You can request market data via APIs and read financial docs.', '{"read_fs", "api_get"}')
+                ('financial_analyst', 'You are an expert Financial Analyst. You can request market data via APIs and read financial docs.', '{"read_fs", "api_get"}'),
+                ('research_assistant', 'You are an expert Research Assistant. You use the web search tool to find the most accurate and up-to-date information, filter the noise, and summarize the findings concisely for the user.', '{"web_search"}')
             ON CONFLICT (agent_name) DO NOTHING;
         """)
         logfire.info("Database schema initialized successfully.")
