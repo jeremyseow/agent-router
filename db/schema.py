@@ -1,10 +1,12 @@
 import logfire
 from db.session import get_db_connection
 
-async def initialize_schema():
+import asyncpg
+
+async def initialize_schema(pool: asyncpg.Pool):
     """Creates the initial database schema if it doesn't exist."""
     logfire.info("Initializing database schema...")
-    async with get_db_connection() as conn:
+    async with get_db_connection(pool) as conn:
         await conn.execute("""
             CREATE TABLE IF NOT EXISTS agent_configs (
                 id SERIAL PRIMARY KEY,

@@ -15,6 +15,10 @@ As per our self-annealing directives, this document tracks framework quirks, lim
 - **Issue**: `AgentRunResult` object threw an `AttributeError` for no attribute `.data`.
 - **Root Cause & Fix**: The Pydantic AI API changed how agent outputs are accessed on the result object backwards unpredictably in new releases. The attribute is named `.output` instead of `.data`. Updated `main.py` router mapping.
 
+### 4. Agent Initialization Deadlocks (SSL Context)
+- **Issue**: Starting the FastAPI app with initialized `GeminiModel` instances under an async lifespan context caused a deadlock/hang inside `ssl.create_default_context`.
+- **Root Cause & Fix**: The Google GenAI client performs synchronous HTTP/SSL setup checks that block the async event loop during Pydantic AI's model validation. Injecting `defer_model_check=True` into all `Agent()` instantiations defers this check until the first runtime execution, safely bypassing the async startup blocking.
+
 ## Logfire Observability
 ### 1. FastAPI Instrumentation Dependencies
 - **Issue**: Calling `logfire.instrument_fastapi(app)` fails with a `ModuleNotFoundError` for `opentelemetry.instrumentation.asgi` if you only installed the base `logfire` package.

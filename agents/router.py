@@ -2,6 +2,7 @@ from pydantic_ai import Agent, RunContext
 from pydantic import BaseModel
 from core.config import settings
 import os
+from models.dependencies import RouterDependencies
 
 # Pydantic AI's Gemini integration looks for GOOGLE_API_KEY
 if settings.gemini_api_key:
@@ -15,12 +16,13 @@ class RouterResponse(BaseModel):
 router_agent = Agent(
     'gemini-2.5-flash',
     output_type=RouterResponse,
-    deps_type=list[str]
+    deps_type=RouterDependencies,
+    defer_model_check=True
 )
 
 @router_agent.system_prompt
-async def get_system_prompt(ctx: RunContext[list[str]]) -> str:
-    agents_list = ", ".join(ctx.deps) if ctx.deps else "none"
+async def get_system_prompt(ctx: RunContext[RouterDependencies]) -> str:
+    agents_list = ", ".join(ctx.deps.available_agents) if ctx.deps.available_agents else "none"
     return (
         "You are the main Router Agent. Your job is to analyze the user's request and decide whether "
         f"to answer it yourself or delegate to a specialized worker agent (Available targets: {agents_list}).\n"
