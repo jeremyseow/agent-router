@@ -91,6 +91,8 @@ sequenceDiagram
 ```text
 agent-router/
 ├── .env                  # Secrets and DB credentials
+├── .tmp/                 # Scraped data & intermediate LLM data (Ignored)
+├── agent_output/         # Safe restrict sandbox for Worker Agent File Generation
 ├── docker-compose.yml    # Database infrastructure (Postgres & PGAdmin)
 ├── main.py               # FastAPI application, startup logic & REST endpoints
 ├── pyproject.toml        # uv Dependency configuration

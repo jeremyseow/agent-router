@@ -49,6 +49,7 @@ Errors are learning opportunities. When something breaks:
 - `.env` - Environment variables and API keys
 - `credentials.json`, `token.json` - Google OAuth credentials (required files, in `.gitignore`)
 iverables live in cloud services (Google Sheets, Slides, etc.) where the user can access them. Everything in `.tmp/` can be deleted and regenerated.
+- `agent_output/` - This is where the agents write their output to. Agents can organize their output in this directory as they see fit.
 - `README.md` - High level overview of the project. Include sequence diagrams of various flows, or any other diagrams that would help understand the system. Explain design choices and trade-offs in the documentation. Give a quick overview of the project struture and what goes where.
 
 ## Summary
