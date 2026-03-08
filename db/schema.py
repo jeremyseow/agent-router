@@ -18,6 +18,15 @@ async def initialize_schema(pool: asyncpg.Pool):
             );
         """)
         
+        await conn.execute("""
+            CREATE TABLE IF NOT EXISTS chat_sessions (
+                session_id VARCHAR(255) PRIMARY KEY,
+                messages JSONB NOT NULL DEFAULT '[]',
+                created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+            );
+        """)
+        
         # Insert default agent configurations if they don't exist
         await conn.execute("""
             INSERT INTO agent_configs (agent_name, system_prompt, enabled_tools)

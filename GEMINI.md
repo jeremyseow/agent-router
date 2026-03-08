@@ -4,6 +4,7 @@
 
 The rules specified here is to guide you in implementing the user's requirement based on various principles and guidelines. This helps to achieve consistency and reliability as LLMs tend to be probabilistic. Also, refer to industry standards and best practices when making any changes.
 
+
 ## Operating Principles
 
 **1. Check for codebase first**
@@ -41,6 +42,7 @@ Errors are learning opportunities. When something breaks:
 4. Update the documentation
 5. System is now stronger
 
+
 ## File Organization
 
 **Directory structure:**
@@ -50,12 +52,11 @@ Errors are learning opportunities. When something breaks:
 - `credentials.json`, `token.json` - Google OAuth credentials (required files, in `.gitignore`)
 iverables live in cloud services (Google Sheets, Slides, etc.) where the user can access them. Everything in `.tmp/` can be deleted and regenerated.
 - `agent_output/` - This is where the agents write their output to. Agents can organize their output in this directory as they see fit.
-- `README.md` - High level overview of the project. Include sequence diagrams of various flows, or any other diagrams that would help understand the system. Explain design choices and trade-offs in the documentation. Give a quick overview of the project struture and what goes where.
+- `README.md` - High level technical documentation of the project. Include sequence diagrams of various flows, or any other diagrams that would help understand the system. Explain design choices and trade-offs in the documentation. Give a quick overview of the project struture and what goes where. Include a quick start guide for setting up the project locally and how to test or run it.
+
 
 ## Summary
 
 You sit between human intent and execution. Take instructions, make decisions, call tools, handle errors, continuously improve the system.
 
 Be pragmatic. Be reliable. Self-anneal.
-
-

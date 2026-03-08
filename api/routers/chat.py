@@ -3,6 +3,7 @@ from fastapi import APIRouter, HTTPException, Request
 from models.api import ChatRequest, ChatResponse
 from agents.router import router_agent
 from models.dependencies import RouterDependencies
+from db.context import load_chat_session, save_chat_session
 
 router = APIRouter()
 
@@ -16,15 +17,25 @@ async def chat_endpoint(req: ChatRequest, request: Request):
     worker_registry = request.app.state.worker_registry
     
     try:
-        # 1. Provide Context mapping to the Router Agent
+        # Provide Context mapping to the Router Agent
         router_deps = RouterDependencies(
             worker_registry=worker_registry, 
             db_pool=pool
         )
         
-        # 2. Start the recursive interaction cycle.
-        #    The LLM may call zero tools, one tool, or parallel tools sequentially before resolving.
-        router_result = await router_agent.run(req.message, deps=router_deps)
+        # Load the persistent conversational memory (Sliding Window)
+        message_history = await load_chat_session(req.session_id, pool)
+        
+        # Start the recursive interaction cycle.
+        # The LLM may call zero tools, one tool, or parallel tools sequentially before resolving.
+        router_result = await router_agent.run(
+            req.message, 
+            deps=router_deps, 
+            message_history=message_history
+        )
+        
+        # Save the updated conversational memory back to the PostgreSQL database
+        await save_chat_session(req.session_id, router_result.all_messages(), pool)
         
         return ChatResponse(
             response=router_result.output,

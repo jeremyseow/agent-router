@@ -9,9 +9,9 @@ An autonomous conversational AI middleware capable of scaling specialized worker
 The Agent Router is designed around a decoupled, database-driven **Multi-Agent Orchestration Graph**. Instead of hardcoding branching logic into the API endpoints, the FastAPI server cleanly passes the user's message to a central **Router Agent**. This Router Agent acts as an unrestricted conversational orchestrator, natively using Pydantic AI's dynamic tool-calling functionality to summon, parallelize, and synthesize data from multiple specialized sub-agents.
 
 The architecture models a 3-layer system:
-- **Directive Layer**: External requests through the FastAPI REST endpoint logic.
-- **Orchestration Layer**: A Router Agent evaluating intent and wielding a proxy `delegate_to_worker` tool to programmatically spawn isolated, context-aware worker instances.
-- **Execution Layer**: Specific roles (e.g. Project Manager, Engineer, Research Assistant) instantiated dynamically at startup from PostgreSQL configurations. Tools (like Local File I/O or Web Search) are injected into these workers strictly based on database tokens mapping to a `tools/registry.py` dictionaries (`AVAILABLE_TOOLS` and `BUILTIN_TOOLS`).
+- **Application Layer**: External requests through the FastAPI REST endpoint logic.
+- **Orchestration Layer**: A Router Agent evaluating intent and wielding a proxy `delegate_to_worker` tool to programmatically spawn isolated, context-aware worker instances that are implemented as tools.
+- **Execution Layer**: Specific roles (e.g. Project Manager, Engineer, Research Assistant) instantiated dynamically at startup from configurations stored in the database. Tools (like Local File I/O or Web Search) are injected into these workers strictly based on these configurations.
 
 ```mermaid
 graph TD
@@ -24,7 +24,7 @@ graph TD
     end
 
     subgraph Orchestration
-        Router[Router Agent\nGemini 2.5 Flash]
+        Router[Router Agent]
     end
 
     subgraph Execution Layer
@@ -36,7 +36,7 @@ graph TD
     end
 
     subgraph Database Layer
-        ConfigDB[(PostgreSQL\nagent_configs)]
+        ConfigDB[(PostgreSQL)]
     end
 
     API -->|Prompt + Context| Router
@@ -64,7 +64,7 @@ sequenceDiagram
     participant Auth as Config/DB
     participant Router as Router Agent
     participant Worker as Worker Agent (e.g., PM, Engineer)
-    participant Model as Gemini 2.5 Flash
+    participant Model as LLM
 
     User->>API: POST /chat {message, session}
     API->>Auth: Load active session & context
@@ -90,6 +90,13 @@ sequenceDiagram
 | **Strict Tool Segregation (Gemini Limitation)** | Gemini natively prevents agents from using Google Grounding Tools (e.g., `WebSearchTool`) alongside Custom Function Tools (`write_fs`) on the same agent instance. The orchestration model naturally solves this by tasking the Researcher to search, and the Engineer to write. | Requires careful allocation of tools in the database schema; an agent cannot be a "jack of all trades" if it utilizes native web search integrations. |
 | **Pydantic Settings & `.env`** | Industry standard, inherently typesafe validation for credentials immediately avoiding runtime explosions. | Difficult debugging if variable precedence overlaps with host OS variables unknowingly. |
 
+## 🧪 Testing Approach (Agentic Evaluation)
+
+Because LLMs are non-deterministic, testing requires a multi-layered strategy:
+1. **Layer 1 (Deterministic)**: Standard `pytest` for unit tests.
+2. **Layer 2 (Behavioral)**: Utilizing Pydantic AI's `FunctionModel` and `TestModel` to simulate agent routing logic, tool calls, and agent responses without actually calling the LLMs.
+3. **Layer 3 (LLM as a Judge)**: Utilizing Pydantic AI's `Evaluator` and LLMs to run critical scenarios and score responses programmatically based on accuracy and completeness.
+
 ## 📁 Project Structure
 
 ```text
@@ -112,6 +119,11 @@ agent-router/
 │
 ├── models/
 │   └── api.py            # FastAPI Request/Response structures
+│
+├── tests/
+│   ├── unit/             # Layer 1: Deterministic pure Python testing
+│   ├── integration/      # Layer 2: API/DB/LLM Behavioral Contract wiring tests
+│   └── e2e/              # Layer 3: End-to-end HTTP tests (future)
 │
 ├── agents/
 │   ├── router.py         # Dynamic routing logic parsing LLM targets
@@ -150,7 +162,13 @@ uv run uvicorn main:app --reload
 ```
 _On the first launch, the `lifespan` event will automatically populate your PostgreSQL database with the default Agent Roles and Tools via `db/schema.py`._
 
-**5. Testing**
+**5. Exploring API**
 Navigate to the Swagger UI available at:
 `http://localhost:8000/docs`
 You can post a request directly to the `/chat` route to see the Router automatically decide whether to handle it or delegate it to a Worker Agent!
+
+**6. Running Tests**
+Execute the pytest suite to validate the deterministic and behavioral layers of the agent:
+```bash
+uv run pytest -v tests/
+```
