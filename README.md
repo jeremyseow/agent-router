@@ -101,11 +101,11 @@ Because LLMs are non-deterministic, testing requires a multi-layered strategy:
 
 ```text
 agent-router/
-├── .env                  # Secrets and DB credentials
+├── .env                  # Configuration variables
 ├── .tmp/                 # Scraped data & intermediate LLM data (Ignored)
-├── agent_output/         # Safe restrict sandbox for Worker Agent File Generation
-├── docker-compose.yml    # Database infrastructure (Postgres & PGAdmin)
-├── main.py               # FastAPI application, startup logic & REST endpoints
+├── agent_output/         # Safe restrict sandbox for agent output
+├── docker-compose.yml    # Infrastructure setup
+├── main.py               # Application startup & dependency injection logic
 ├── pyproject.toml        # uv Dependency configuration
 │
 ├── core/
@@ -118,12 +118,12 @@ agent-router/
 │   └── session.py        # AsyncPG connection pools
 │
 ├── models/
-│   └── api.py            # FastAPI Request/Response structures
+│   └── api.py            # API Request/Response structures
 │
 ├── tests/
-│   ├── unit/             # Layer 1: Deterministic pure Python testing
-│   ├── integration/      # Layer 2: API/DB/LLM Behavioral Contract wiring tests
-│   └── e2e/              # Layer 3: End-to-end HTTP tests (future)
+│   ├── unit/             # Layer 1: Deterministic unit testing
+│   ├── integration/      # Layer 2: API/DB/LLM integration tests
+│   └── e2e/              # Layer 3: End-to-end tests
 │
 ├── agents/
 │   ├── router.py         # Dynamic routing logic parsing LLM targets
@@ -132,25 +132,25 @@ agent-router/
 └── tools/
     ├── api_tools.py      # HTTP helper functions
     ├── fs_tools.py       # Sandbox Local File I/O
-    └── registry.py       # Pointers translating DB strings to Py Functions
+    └── registry.py       # Constants and functions for agent registry setup
 ```
 
 ## 🚀 Quick Start Guide
 
 **1. Prerequisites**
 - Install `uv` for python dependencies.
-- Install Docker for the database containers.
+- Install Docker for the infrastructure setup.
 - Have a Gemini API key.
 
 **2. Setup Environment**
-Duplicate the `.env.template` into a local `.env` file and insert your credentials.
+Duplicate the `.env.template` into a local `.env` file and update the variables:
 ```bash
 cp .env.template .env
 ```
 _Ensure `GEMINI_API_KEY` is populated._
 
-**3. Start the Database**
-Launch the PostgreSQL engine in the background:
+**3. Setup Infrastructure**
+Initialize the infrastructure setup:
 ```bash
 docker-compose up -d
 ```
@@ -160,12 +160,12 @@ Start the FastAPI server (using `uv run` will automatically install the project'
 ```bash
 uv run uvicorn main:app --reload
 ```
-_On the first launch, the `lifespan` event will automatically populate your PostgreSQL database with the default Agent Roles and Tools via `db/schema.py`._
+_Automatically populate your PostgreSQL database with the default Agent Roles and Tools via `db/schema.py`._
 
 **5. Exploring API**
 Navigate to the Swagger UI available at:
 `http://localhost:8000/docs`
-You can post a request directly to the `/chat` route to see the Router automatically decide whether to handle it or delegate it to a Worker Agent!
+You can post a request directly to the `/chat` route to see the Router automatically decide whether to handle it or delegate it to a Worker Agent.
 
 **6. Running Tests**
 Execute the pytest suite to validate the deterministic and behavioral layers of the agent:
