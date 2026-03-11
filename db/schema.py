@@ -3,6 +3,7 @@ from db.session import get_db_connection
 
 import asyncpg
 
+# TODO: consider using a proper migration tool in the future.
 async def initialize_schema(pool: asyncpg.Pool):
     """Creates the initial database schema if it doesn't exist."""
     logfire.info("Initializing database schema...")
@@ -11,6 +12,7 @@ async def initialize_schema(pool: asyncpg.Pool):
             CREATE TABLE IF NOT EXISTS agent_configs (
                 id SERIAL PRIMARY KEY,
                 agent_name VARCHAR(255) UNIQUE NOT NULL,
+                role_prompt TEXT NOT NULL,
                 system_prompt TEXT NOT NULL,
                 enabled_tools TEXT[] NOT NULL DEFAULT '{}',
                 created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
@@ -27,14 +29,17 @@ async def initialize_schema(pool: asyncpg.Pool):
             );
         """)
         
-        # Insert default agent configurations if they don't exist
+        # Insert default agent configurations if they don't exist, updating the role_prompt if it did exist
         await conn.execute("""
-            INSERT INTO agent_configs (agent_name, system_prompt, enabled_tools)
+            INSERT INTO agent_configs (agent_name, role_prompt, system_prompt, enabled_tools)
             VALUES 
-                ('pm', 'You are an expert Project Manager. You break down tasks into subtasks and ensure all engineering output meets the user''s goals.', '{"read_fs", "write_fs"}'),
-                ('engineer', 'You are an expert Software Engineer. You write python code, test, and perform technical execution.', '{"read_fs", "write_fs", "api_get", "api_post"}'),
-                ('financial_analyst', 'You are an expert Financial Analyst. You can request market data via APIs and read financial docs.', '{"read_fs", "api_get"}'),
-                ('research_assistant', 'You are an expert Research Assistant. You use the web search tool to find the most accurate and up-to-date information, filter the noise, and summarize the findings concisely for the user.', '{"web_search"}')
-            ON CONFLICT (agent_name) DO NOTHING;
+                ('pm', 'Project Manager who breaks down tasks and orchestrates engineering output.', 'You are an expert Project Manager. You break down tasks into subtasks and ensure all engineering output meets the user''s goals.', '{"read_fs", "write_fs"}'),
+                ('engineer', 'Software Engineer who writes code, tests, and executes technical tasks.', 'You are an expert Software Engineer. You write python code, test, and perform technical execution.', '{"read_fs", "write_fs", "api_get", "api_post"}'),
+                ('financial_analyst', 'Financial Analyst who queries market data and analyzes stocks.', 'You are an expert Financial Analyst. You can request market data via APIs and read financial docs.', '{"read_fs", "api_get"}'),
+                ('research_assistant', 'Research Assistant who searches the web to find accurate, up-to-date information.', 'You are an expert Research Assistant. You use the web search tool to find the most accurate and up-to-date information, filter the noise, and summarize the findings concisely for the user.', '{"web_search"}')
+            ON CONFLICT (agent_name) DO UPDATE SET 
+                role_prompt = EXCLUDED.role_prompt,
+                system_prompt = EXCLUDED.system_prompt,
+                enabled_tools = EXCLUDED.enabled_tools;
         """)
         logfire.info("Database schema initialized successfully.")

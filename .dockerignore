@@ -1,0 +1,12 @@
+.venv/
+.env
+.pytest_cache/
+__pycache__/
+*.pyc
+.git/
+.vscode/
+.idea/
+.tmp/
+agent_output/
+*.md
+docs/

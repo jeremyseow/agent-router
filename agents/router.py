@@ -4,10 +4,6 @@ import os
 import logfire
 from models.dependencies import RouterDependencies, AgentDependencies
 
-# Pydantic AI's Gemini integration looks for GOOGLE_API_KEY
-if settings.gemini_api_key:
-    os.environ["GOOGLE_API_KEY"] = settings.gemini_api_key
-
 # We removed output_type structured constraints so the router can converse freely
 router_agent = Agent(
     'gemini-2.5-flash',
@@ -18,10 +14,17 @@ router_agent = Agent(
 
 @router_agent.system_prompt
 async def get_system_prompt(ctx: RunContext[RouterDependencies]) -> str:
-    agents_list = ", ".join(ctx.deps.worker_registry.keys()) if ctx.deps.worker_registry else "none"
+    # Build a rich string describing each available worker and their exact job description
+    agent_descriptions = "\n".join(
+        f"- **{name}**: {registration.description}" 
+        for name, registration in ctx.deps.worker_registry.items()
+    ) if ctx.deps.worker_registry else "No workers available."
+
     return (
         "You are the main Supervising Orchestrator coordinating complex tasks on behalf of the user.\n"
-        f"You have access to a team of specialized Worker Agents: {agents_list}.\n"
+        "You have access to the following specialized Worker Agents. Read their descriptions "
+        "carefully to decide which one(s) are best equipped to handle the task:\n"
+        f"{agent_descriptions}\n\n"
         "If the user asks for a simple conversational question, answer it directly.\n"
         "If the user asks for something complex requiring research, coding, or managing files, "
         "you MUST invoke the `delegate_to_worker` tool to dispatch the subtasks to the appropriate worker agent(s).\n"
@@ -40,7 +43,8 @@ async def delegate_to_worker(
         return f"Error: Worker '{worker_name}' not found. Available targets: {list(ctx.deps.worker_registry.keys())}"
     
     logfire.info(f"Router delegating to {worker_name}: {task_description[:50]}...")
-    worker = ctx.deps.worker_registry[worker_name]
+    worker_registration = ctx.deps.worker_registry[worker_name]
+    worker = worker_registration.agent
     
     # Create strict execution isolation for the worker
     worker_deps = AgentDependencies(
