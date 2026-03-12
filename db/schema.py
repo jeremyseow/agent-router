@@ -19,11 +19,11 @@ async def initialize_schema(pool: asyncpg.Pool):
                 updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
             );
         """)
-        
+
         await conn.execute("""
-            CREATE TABLE IF NOT EXISTS chat_sessions (
+            CREATE TABLE chat_sessions (
                 session_id VARCHAR(255) PRIMARY KEY,
-                messages JSONB NOT NULL DEFAULT '[]',
+                summary TEXT NOT NULL DEFAULT '',
                 created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
             );

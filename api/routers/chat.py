@@ -2,8 +2,11 @@ import logfire
 from fastapi import APIRouter, HTTPException, Request
 from models.api import ChatRequest, ChatResponse
 from agents.router import router_agent
+from agents.summarizer import summarizer_agent
 from models.dependencies import RouterDependencies
 from db.context import load_chat_session, save_chat_session
+from pydantic_ai.messages import ModelRequest, UserPromptPart, ModelResponse, TextPart
+from pydantic_ai.messages import ModelMessagesTypeAdapter
 
 router = APIRouter()
 
@@ -23,19 +26,35 @@ async def chat_endpoint(req: ChatRequest, request: Request):
             db_pool=pool
         )
         
-        # Load the persistent conversational memory (Sliding Window)
-        message_history = await load_chat_session(req.session_id, pool)
+        # Load the persistent conversational memory (Summary string)
+        summary = await load_chat_session(req.session_id, pool)
         
-        # Start the recursive interaction cycle.
-        # The LLM may call zero tools, one tool, or parallel tools sequentially before resolving.
+        message_history = []
+        if summary:
+            # We fulfill the user's specific request: structurally injecting the past summary directly into the AI agent's timeline
+            message_history = [
+                ModelRequest(parts=[UserPromptPart(content=f"Previous Conversation Summary:\n{summary}")]),
+                ModelResponse(parts=[TextPart(content="Understood. I will use this summary as conversational context for our current ongoing interaction.")])
+            ]
+        
+        # Start the recursive interaction cycle with the Router
         router_result = await router_agent.run(
             req.message, 
             deps=router_deps, 
             message_history=message_history
         )
         
-        # Save the updated conversational memory back to the PostgreSQL database
-        await save_chat_session(req.session_id, router_result.all_messages(), pool)
+        # Serialize the exhaustive interaction trace spanning the history and new router operations
+        full_json_bytes = ModelMessagesTypeAdapter.dump_json(router_result.all_messages())
+        
+        # Execute the pure summarization agent on the payload
+        logfire.info("Running Summarizer Agent on the conversation history...")
+        summary_result = await summarizer_agent.run(
+            f"Please summarize the following conversation history. It represents an ongoing interaction between a user and an AI router agent. Capture all crucial context, facts, decisions, and system statuses so it can be used as memory mapping for the next turn:\n\n{full_json_bytes.decode('utf-8')}"
+        )
+        
+        # Save the updated summarized conversational memory back to PostgreSQL
+        await save_chat_session(req.session_id, summary_result.output, pool)
         
         return ChatResponse(
             response=router_result.output,
