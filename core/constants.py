@@ -1,6 +1,14 @@
+from enum import Enum
+
 # Knowledge Base Constants
 MAX_INGEST_FILES = 5
 SUPPORTED_INGEST_EXTENSIONS = {".md", ".pdf", ".csv", ".yaml", ".yml"}
+
+class IngestionStatus(str, Enum):
+    PENDING = "pending"
+    PROCESSING = "processing"
+    COMPLETED = "completed"
+    FAILED = "failed"
 
 # Text Chunking Constants
 DEFAULT_CHUNK_SIZE = 1000

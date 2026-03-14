@@ -4,10 +4,17 @@ import asyncpg
 import yaml
 import pandas as pd
 import io
+import uuid
+from typing import Optional
 from pypdf import PdfReader
 from google import genai
 from core.config import settings
-from core.constants import DEFAULT_CHUNK_SIZE, DEFAULT_CHUNK_OVERLAP, EMBEDDING_MODEL
+from core.constants import (
+    DEFAULT_CHUNK_SIZE, 
+    DEFAULT_CHUNK_OVERLAP, 
+    EMBEDDING_MODEL,
+    IngestionStatus
+)
 
 def extract_text_from_bytes(filename: str, content: bytes) -> str:
     """Extracts text from various file formats provided as bytes."""
@@ -50,6 +57,67 @@ async def delete_document(conn: asyncpg.Connection, document_name: str):
         "DELETE FROM knowledge_chunks WHERE document_name = $1",
         document_name
     )
+
+async def create_ingestion_job(pool: asyncpg.Pool, filename: str) -> str:
+    """Creates a new ingestion job and returns the job_id."""
+    async with pool.acquire() as conn:
+        job_id = await conn.fetchval(
+            "INSERT INTO ingestion_jobs (filename, status) VALUES ($1, $2) RETURNING job_id",
+            filename, IngestionStatus.PENDING
+        )
+        return str(job_id)
+
+async def get_existing_job(pool: asyncpg.Pool, filename: str) -> Optional[dict]:
+    """Checks for an existing job for the given filename."""
+    async with pool.acquire() as conn:
+        row = await conn.fetchrow(
+            "SELECT job_id, status FROM ingestion_jobs WHERE filename = $1 ORDER BY created_at DESC LIMIT 1",
+            filename
+        )
+        if row:
+            return {"job_id": str(row['job_id']), "status": row['status']}
+        return None
+
+async def update_job_status(pool: asyncpg.Pool, job_id: str, status: str, error_message: Optional[str] = None):
+    """Updates the status and error message of an ingestion job."""
+    async with pool.acquire() as conn:
+        await conn.execute(
+            "UPDATE ingestion_jobs SET status = $1, error_message = $2, updated_at = CURRENT_TIMESTAMP WHERE job_id = $3",
+            status, error_message, uuid.UUID(job_id)
+        )
+
+async def get_job_status(pool: asyncpg.Pool, job_id: str) -> Optional[dict]:
+    """Retrieves the status of an ingestion job."""
+    async with pool.acquire() as conn:
+        row = await conn.fetchrow(
+            "SELECT job_id, filename, status, error_message, created_at, updated_at FROM ingestion_jobs WHERE job_id = $1",
+            uuid.UUID(job_id)
+        )
+        if row:
+            return dict(row)
+        return None
+
+async def process_ingestion_job(
+    pool: asyncpg.Pool,
+    job_id: str,
+    document_name: str,
+    content_bytes: bytes,
+    overwrite: bool = False
+):
+    """Background task to process a document ingestion job."""
+    try:
+        await update_job_status(pool, job_id, IngestionStatus.PROCESSING)
+        
+        result = await ingest_document_content(pool, document_name, content_bytes, overwrite)
+        
+        if result["status"] == "error":
+            await update_job_status(pool, job_id, IngestionStatus.FAILED, result.get("message"))
+        else:
+            await update_job_status(pool, job_id, IngestionStatus.COMPLETED)
+            
+    except Exception as e:
+        logfire.error(f"Fatal error in ingestion job {job_id}: {e}")
+        await update_job_status(pool, job_id, IngestionStatus.FAILED, str(e))
 
 async def ingest_document_content(
     pool: asyncpg.Pool, 

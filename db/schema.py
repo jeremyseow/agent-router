@@ -49,6 +49,17 @@ async def initialize_schema(pool: asyncpg.Pool):
             ON knowledge_chunks USING hnsw (embedding vector_cosine_ops);
         """)
 
+        await conn.execute("""
+            CREATE TABLE IF NOT EXISTS ingestion_jobs (
+                job_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                filename VARCHAR(255) NOT NULL,
+                status VARCHAR(50) NOT NULL DEFAULT 'pending', -- pending, processing, completed, failed
+                error_message TEXT,
+                created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+            );
+        """)
+
         # Insert default agent configurations if they don't exist...
         await conn.execute("""
             INSERT INTO agent_configs (agent_name, role_prompt, system_prompt, enabled_tools)
@@ -57,7 +68,7 @@ async def initialize_schema(pool: asyncpg.Pool):
                 ('engineer', 'Software Engineer who writes code, tests, and executes technical tasks.', 'You are an expert Software Engineer. You write python code, test, and perform technical execution.', '{"read_fs", "write_fs", "api_get", "api_post"}'),
                 ('financial_analyst', 'Financial Analyst who queries market data and analyzes stocks.', 'You are an expert Financial Analyst. You can request market data via APIs and read financial docs.', '{"read_fs", "api_get"}'),
                 ('research_assistant', 'Research Assistant who searches the web to find accurate, up-to-date information.', 'You are an expert Research Assistant. You use the web search tool to find the most accurate and up-to-date information, filter the noise, and summarize the findings concisely for the user.', '{"web_search"}'),
-                ('librarian', 'Librarian who manages the knowledge base and retrieves relevant information from internal documents.', 'You are an expert Librarian. You have access to the internal knowledge base which contains documentation, architecture details, and technical notes. Use the knowledge base to answer questions about the system''s history, design, and internal specifications.', '{"search_knowledge_base"}')
+                ('librarian', 'Specialized Knowledge Base Agent (Librarian) who manages and retrieves information from internal project documents.', 'You are an expert Librarian. You have access to the internal knowledge base which contains documentation, architecture details, and technical notes. ALWAYS use the `search_knowledge_base` tool to answer questions about the system''s history, design, architecture, or internal specifications. Do not rely on your own internal knowledge if the information might be in the documents.', '{"search_knowledge_base"}')
             ON CONFLICT (agent_name) DO UPDATE SET 
                 role_prompt = EXCLUDED.role_prompt,
                 system_prompt = EXCLUDED.system_prompt,
