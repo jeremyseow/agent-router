@@ -156,9 +156,34 @@ docker-compose up -d
 ```
 
 **4. Run the Application**
-Start the FastAPI server (using `uv run` will automatically install the project's dependencies if not yet synced):
+### Quick Start (Local)
+1.  **Sync Dependencies**: `uv sync`
+2.  **Environment Setup**: Copy `.env.template` to `.env` and fill in your keys.
+3.  **Run API**: `uv run uvicorn main:app --reload`
+
+### Running with Docker (Recommended)
+The easiest way to run the entire stack (API, Postgres with Vector support, and PGAdmin) is using the provided `Makefile`.
+
+1.  **Build Images**:
+    ```bash
+    make build
+    ```
+2.  **Start Services**:
+    ```bash
+    make up
+    ```
+3.  **View Logs**:
+    ```bash
+    make logs
+    ```
+4.  **Stop Services**:
+    ```bash
+    make down
+    ```
+
+For manual control, you can still use standard Docker Compose commands:
 ```bash
-uv run uvicorn main:app --reload
+docker compose up -d
 ```
 _Automatically populate your PostgreSQL database with the default Agent Roles and Tools via `db/schema.py`._
 

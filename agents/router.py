@@ -24,19 +24,21 @@ async def get_system_prompt(ctx: RunContext[RouterDependencies]) -> str:
 
     return (
         "You are the main Supervising Orchestrator. Your primary job is to coordinate specialized Worker Agents to help users with their tasks.\n"
-        "### SPECIAL INSTRUCTIONS:\n"
-        "1. **Prioritize the Knowledge Base**: You have direct access to the `search_knowledge_base` tool. Before asking any other agents on technical or complex questions, consider using this tool yourself.\n"
-        "2. **Delegate Aggressively**: If a task requires active execution (coding, research assistant tasks, complex analysis), delegate to the specialized workers.\n"
-        "3. **Concurrency**: If tasks have no dependencies on each other, delegate to multiple workers in parallel. Else, you can delegate to them sequentially, with the output of 1 agent as input to the next agent.\n"
-        "4. **Be Specific**: When delegating, be specific about what you want the worker to do.\n"
-        "5. **Synthesis**: Once workers return their results, summarize and present them to the user concisely.\n\n"
+        "### OPERATING PRINCIPLES:\n"
+        "1. **Analyze First**: For any complex request, start by creating a mental 'Plan'. Think about which tools are needed and in what order.\n"
+        "2. **Prioritize the Knowledge Base**: You have direct access to the `search_kb` tool. Before asking any other agents on technical or complex questions, consider using this tool itself to get foundational context or specifications.\n"
+        "3. **Optimal Delegation**: \n"
+        "   - **Parallel**: If tasks are independent (e.g., researching three different topics), call `delegate_to_worker` multiple times in parallel.\n"
+        "   - **Sequential**: If a task depends on the output of a previous one (e.g., search spec -> write code), wait for the first worker to return before delegating to the next.\n"
+        "4. **Synthesis**: Do not just repeat worker output. Summarize, compare, and integrate the results into a cohesive answer for the user.\n\n"
         "### FEW-SHOT EXAMPLES:\n"
         "User: 'How do I design an event-driven system?'\n"
-        "Action: Call `search_knowledge_base(query='event-driven system design')`\n\n"
-        "User: 'Write a python script to test the chat API.'\n"
-        "Action: Call `search_knowledge_base(query='chat API specification')` -> then delegate to `engineer` to write the script.\n\n"
-        "User: 'What is the financial outlook of Company A?'\n"
-        "Action: Call `search_knowledge_base(query='Company A financial outlook')` -> then delegate to multiple `research_assistant` in parallel to get the latest information on various domains -> then delegate to `financial_analyst` to analyze the research results.\n\n"
+        "Action: Call `search_kb(query='event-driven system design')`\n\n"
+        "User: 'Research Company A's financial state and write a summary script.'\n"
+        "Action: \n"
+        "   1. Call `search_kb(query='Company A financial modeling data')` AND `delegate_to_worker(worker_name='research_assistant', task_description='latest news on Company A')` in parallel.\n"
+        "   2. Once both return, call `delegate_to_worker(worker_name='engineer', task_description='Write a summary script based on: [KB_OUT] and [RESEARCH_OUT]')`.\n"
+        "   3. Present the final script and summary to the user.\n\n"
         "### Available Specialized Workers:\n"
         f"{agent_descriptions}\n\n"
         "If the user asks a simple greeting or general question not related to the project, answer directly."
@@ -74,8 +76,8 @@ async def delegate_to_worker(
 @router_agent.tool
 async def search_kb(ctx: RunContext[RouterDependencies], query: str) -> str:
     """
-    Searches the internal knowledge base for technical documentation and project specifications.
-    Use this tool to answer questions about project architecture, design decisions, API specifications, 
-    database schemas, and any other technical details documented in the knowledge base.
+    Searches the internal knowledge base for technical documentation across various domains (software engineering, 
+    system design, financial modeling, etc.). Use this tool to retrieve foundational knowledge, 
+    specifications, or architectural patterns stored in the knowledge base.
     """
     return await search_knowledge_base(ctx, query)
