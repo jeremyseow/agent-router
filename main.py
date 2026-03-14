@@ -8,6 +8,8 @@ from db.session import init_db_pool
 from db.schema import initialize_schema
 from agents.workers import init_workers
 from api.routers.chat import router as chat_router
+from api.routers.images import router as images_router
+from api.routers.ingestion import router as ingestion_router
 
 # Setup logfire immediately
 setup_observability()
@@ -34,3 +36,5 @@ logfire.instrument_fastapi(app)
 
 # Include the external routers
 app.include_router(chat_router, prefix="/chat", tags=["Chat"])
+app.include_router(images_router, prefix="/images", tags=["Images"])
+app.include_router(ingestion_router, prefix="/kb", tags=["Knowledge Base"])

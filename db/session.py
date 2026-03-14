@@ -1,8 +1,13 @@
 import asyncpg
+import pgvector.asyncpg
 from typing import Optional
 from contextlib import asynccontextmanager
 from core.config import settings
 import logfire
+
+async def init_connection(conn):
+    """Initializes a new connection in the pool with pgvector registration."""
+    await pgvector.asyncpg.register_vector(conn)
 
 async def init_db_pool() -> asyncpg.Pool:
     logfire.info(f"Initializing asyncpg database pool (SSL: {settings.postgres_ssl_enabled})")
@@ -14,7 +19,8 @@ async def init_db_pool() -> asyncpg.Pool:
         port=settings.postgres_port,
         ssl=settings.is_ssl_enabled,
         min_size=1,
-        max_size=10
+        max_size=10,
+        init=init_connection
     )
 
 @asynccontextmanager

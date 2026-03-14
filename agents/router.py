@@ -1,12 +1,13 @@
 from pydantic_ai import Agent, RunContext
 from core.config import settings
+from core.constants import ROUTER_MODEL
 import os
 import logfire
 from models.dependencies import RouterDependencies, AgentDependencies
 
 # We removed output_type structured constraints so the router can converse freely
 router_agent = Agent(
-    'gemini-2.5-flash',
+    ROUTER_MODEL,
     deps_type=RouterDependencies,
     defer_model_check=True,
     retries=2

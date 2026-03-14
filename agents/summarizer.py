@@ -1,7 +1,7 @@
-import logfire
 from pydantic_ai import Agent, RunContext
+from core.constants import SUMMARY_MODEL
 
-summarizer_agent = Agent('gemini-2.5-flash', defer_model_check=True)
+summarizer_agent = Agent(SUMMARY_MODEL, defer_model_check=True)
 
 @summarizer_agent.system_prompt
 async def get_system_prompt(ctx: RunContext) -> str:

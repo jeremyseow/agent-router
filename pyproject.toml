@@ -9,8 +9,13 @@ dependencies = [
     "google-genai>=1.66.0",
     "httpx>=0.28.1",
     "logfire[fastapi]>=4.27.0",
+    "numpy>=2.4.3",
+    "pandas>=3.0.1",
+    "pgvector>=0.4.2",
     "pydantic-ai>=1.67.0",
     "pydantic-settings>=2.13.1",
+    "pypdf>=6.8.0",
+    "pyyaml>=6.0.3",
     "uvicorn[standard]>=0.41.0",
 ]
 

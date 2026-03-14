@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   postgres:
-    image: postgres:18-alpine
+    image: pgvector/pgvector:pg17
     container_name: agent_router_db
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-agent_user}
