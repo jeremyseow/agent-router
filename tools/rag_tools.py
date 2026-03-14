@@ -8,8 +8,8 @@ import numpy as np
 
 async def search_knowledge_base(ctx: RunContext[RouterDependencies], query: str) -> str:
     """
-    Searches the internal knowledge base for relevant information using semantic vector search.
-    Useful for answering questions about the project architecture, design choices, and technical specifications.
+    Searches the internal knowledge base for technical documentation related to various domains such as software engineering, financial analysis, and more.
+    Use this tool to answer questions on topics such as distributed systems, software architecture, financial modeling, and more.
     """
     logfire.info(f"Searching knowledge base for: {query}")
     
@@ -17,7 +17,8 @@ async def search_knowledge_base(ctx: RunContext[RouterDependencies], query: str)
     client = genai.Client()
     embedding_response = client.models.embed_content(
         model=EMBEDDING_MODEL,
-        contents=query
+        contents=query,
+        config={'output_dimensionality': 768}
     )
     query_vector = embedding_response.embeddings[0].values
     
