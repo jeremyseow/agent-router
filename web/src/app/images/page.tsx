@@ -69,14 +69,14 @@ export default function ImagesPage() {
 
     return (
         <div className="flex flex-col h-full w-full">
-            <header className="flex h-16 items-center border-b border-border/50 px-8 sticky top-0 bg-background/50 backdrop-blur-md z-10">
+            <header className="flex h-16 items-center border-b border-border/50 px-4 lg:px-8 pl-14 lg:pl-8 sticky top-0 bg-background/50 backdrop-blur-md z-10">
                 <div className="flex items-center gap-2">
                     <ImageIcon className="h-4 w-4 text-accent" />
                     <h1 className="text-sm font-semibold uppercase tracking-widest text-muted-foreground">Image Generation</h1>
                 </div>
             </header>
 
-            <div className="flex-1 overflow-y-auto px-8 py-10">
+            <div className="flex-1 overflow-y-auto px-4 lg:px-8 py-10">
                 <div className="max-w-4xl mx-auto space-y-12">
 
                     <AnimatePresence mode="wait">
@@ -130,7 +130,7 @@ export default function ImagesPage() {
                 </div>
             </div>
 
-            <div className="p-8 sticky bottom-0 bg-gradient-to-t from-background via-background/80 to-transparent">
+            <div className="p-4 lg:p-8 sticky bottom-0 bg-gradient-to-t from-background via-background/80 to-transparent">
                 <form onSubmit={handleSubmit} className="max-w-4xl mx-auto space-y-4">
 
                     <div className="flex items-center gap-4">

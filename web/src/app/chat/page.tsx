@@ -5,6 +5,8 @@ import { Send, Sparkles, User, Bot, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChatResponse, Message } from "@/lib/api-types";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
@@ -62,7 +64,7 @@ export default function ChatPage() {
 
     return (
         <div className="flex flex-col h-full w-full">
-            <header className="flex h-16 items-center justify-between border-b border-border/50 px-8 sticky top-0 bg-background/50 backdrop-blur-md z-10">
+            <header className="flex h-16 items-center justify-between border-b border-border/50 px-4 lg:px-8 pl-14 lg:pl-8 sticky top-0 bg-background/50 backdrop-blur-md z-10">
                 <div className="flex items-center gap-2">
                     <Sparkles className="h-4 w-4 text-accent" />
                     <h1 className="text-sm font-semibold uppercase tracking-widest text-muted-foreground">Orchestrator Chat</h1>
@@ -74,7 +76,7 @@ export default function ChatPage() {
                 )}
             </header>
 
-            <div ref={scrollRef} className="flex-1 overflow-y-auto px-8 py-10 scroll-smooth">
+            <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 lg:px-8 py-10 scroll-smooth">
                 <div className="max-w-4xl mx-auto space-y-8">
                     <AnimatePresence initial={false}>
                         {messages.length === 0 ? (
@@ -129,11 +131,42 @@ export default function ChatPage() {
                                         msg.role === "user" ? "items-end" : "items-start"
                                     )}>
                                         <div className={cn(
-                                            "px-5 py-3 rounded-2xl glass text-sm leading-relaxed",
+                                            "px-5 py-3 rounded-2xl glass text-sm leading-relaxed overflow-hidden",
                                             msg.role === "user" ? "rounded-tr-none bg-accent/5 border-accent/10 text-foreground" : "rounded-tl-none border-white/5 text-muted-foreground",
                                             msg.isError && "border-red-500/50 bg-red-500/5 text-red-200"
                                         )}>
-                                            {msg.content}
+                                            {msg.role === "user" ? (
+                                                msg.content
+                                            ) : (
+                                                <ReactMarkdown 
+                                                    remarkPlugins={[remarkGfm]}
+                                                    components={{
+                                                        h1: ({...props}) => <h1 className="text-xl font-bold mt-4 mb-2 text-foreground" {...props} />,
+                                                        h2: ({...props}) => <h2 className="text-lg font-bold mt-4 mb-2 text-foreground" {...props} />,
+                                                        h3: ({...props}) => <h3 className="text-md font-bold mt-3 mb-1 text-foreground" {...props} />,
+                                                        p: ({...props}) => <p className="mb-3 last:mb-0" {...props} />,
+                                                        ul: ({...props}) => <ul className="list-disc ml-5 mb-4 space-y-1" {...props} />,
+                                                        ol: ({...props}) => <ol className="list-decimal ml-5 mb-4 space-y-1" {...props} />,
+                                                        li: ({...props}) => <li className="mb-1" {...props} />,
+                                                        code: ({inline, ...props}: any) => (
+                                                            inline 
+                                                                ? <code className="bg-white/10 px-1.5 py-0.5 rounded text-xs font-mono text-accent" {...props} />
+                                                                : <code className="block bg-black/40 p-4 rounded-xl my-4 text-xs font-mono text-accent border border-white/5 overflow-x-auto" {...props} />
+                                                        ),
+                                                        table: ({...props}) => (
+                                                            <div className="overflow-x-auto my-4 rounded-xl border border-white/5">
+                                                                <table className="w-full text-left border-collapse" {...props} />
+                                                            </div>
+                                                        ),
+                                                        th: ({...props}) => <th className="bg-white/5 p-3 text-xs font-bold border-b border-white/10" {...props} />,
+                                                        td: ({...props}) => <td className="p-3 text-xs border-b border-white/5" {...props} />,
+                                                        hr: ({...props}) => <hr className="my-6 border-white/10" {...props} />,
+                                                        blockquote: ({...props}) => <blockquote className="border-l-4 border-accent/40 pl-4 py-1 italic my-4 bg-accent/5 rounded-r-lg" {...props} />,
+                                                    }}
+                                                >
+                                                    {msg.content}
+                                                </ReactMarkdown>
+                                            )}
                                         </div>
                                     </div>
                                 </motion.div>
@@ -158,7 +191,7 @@ export default function ChatPage() {
                 </div>
             </div>
 
-            <div className="p-8 sticky bottom-0 bg-gradient-to-t from-background via-background/80 to-transparent">
+            <div className="p-4 lg:p-8 sticky bottom-0 bg-gradient-to-t from-background via-background/80 to-transparent">
                 <form onSubmit={handleSubmit} className="max-w-4xl mx-auto">
                     <div className="relative group">
                         <div className="absolute -inset-1 bg-gradient-to-r from-accent/50 to-blue-500/20 rounded-2xl opacity-0 group-focus-within:opacity-100 blur-md transition duration-500" />

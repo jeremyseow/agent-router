@@ -83,14 +83,14 @@ export default function IngestPage() {
 
     return (
         <div className="flex flex-col h-full w-full">
-            <header className="flex h-16 items-center border-b border-border/50 px-8 sticky top-0 bg-background/50 backdrop-blur-md z-10">
+            <header className="flex h-16 items-center border-b border-border/50 px-4 lg:px-8 pl-14 lg:pl-8 sticky top-0 bg-background/50 backdrop-blur-md z-10">
                 <div className="flex items-center gap-2">
                     <Database className="h-4 w-4 text-accent" />
                     <h1 className="text-sm font-semibold uppercase tracking-widest text-muted-foreground">Knowledge Base</h1>
                 </div>
             </header>
 
-            <div className="flex-1 overflow-y-auto px-8 py-10">
+            <div className="flex-1 overflow-y-auto px-4 lg:px-8 py-10">
                 <div className="max-w-4xl mx-auto space-y-12 pb-20">
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
