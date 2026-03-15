@@ -15,16 +15,26 @@ down:
 	docker compose down
 
 # Restart the application service
-restart-app:
-	docker compose restart app
+restart-server:
+	docker compose restart server
 
 # Follow logs for all services
 logs:
 	docker compose logs -f
 
-# Follow logs specifically for the app service
-logs-app:
-	docker compose logs -f app
+# Follow logs specifically for the server service
+logs-server:
+	docker compose logs -f server
+
+# Local development targets
+server-dev:
+	cd server && uv run uvicorn main:app --reload --port 8000
+
+web-dev:
+	cd web && npm run dev
+
+test-server:
+	cd server && uv run pytest -v tests/
 
 # Clean up unused Docker resources
 clean:

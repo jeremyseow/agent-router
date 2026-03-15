@@ -58,6 +58,7 @@ async def chat_endpoint(req: ChatRequest, request: Request):
         
         return ChatResponse(
             response=router_result.output,
+            session_id=req.session_id,
             agent_used="router"
         )
             

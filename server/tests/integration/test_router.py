@@ -4,7 +4,7 @@ from pydantic_ai.models.test import TestModel
 from pydantic_ai.models.function import AgentInfo, FunctionModel
 from pydantic_ai.messages import ModelMessage, ModelResponse, ToolCallPart, TextPart, ToolReturnPart
 from agents.router import router_agent
-from models.dependencies import RouterDependencies
+from models.dependencies import RouterDependencies, WorkerRegistration
 
 def call_delegate_to_worker(messages: list[ModelMessage], info: AgentInfo) -> ModelResponse:
     """
@@ -33,7 +33,7 @@ async def test_router_delegation_contract():
     mock_pm_agent = Agent(model=test_model)
     
     # Mock the dependency for the router agent
-    mock_registry = {"pm": mock_pm_agent}
+    mock_registry = {"pm": WorkerRegistration(agent=mock_pm_agent, description="Mock PM Description")}
     deps = RouterDependencies(worker_registry=mock_registry, db_pool=None)
     
     # We replace the LLM model for the router agent with our deterministic FunctionModel

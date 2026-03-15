@@ -101,38 +101,37 @@ Because LLMs are non-deterministic, testing requires a multi-layered strategy:
 
 ```text
 agent-router/
-├── .env                  # Configuration variables
-├── .tmp/                 # Scraped data & intermediate LLM data (Ignored)
-├── agent_output/         # Safe restrict sandbox for agent output
-├── docker-compose.yml    # Infrastructure setup
-├── main.py               # Application startup & dependency injection logic
-├── pyproject.toml        # uv Dependency configuration
-│
-├── core/
-│   ├── config.py         # Global settings loading
-│   └── observability.py  # Logfire Configuration
-│
-├── db/
-│   ├── agent_config.py   # Database mapping and agent configurations 
-│   ├── schema.py         # Table definition and initial setup population
-│   └── session.py        # AsyncPG connection pools
-│
-├── models/
-│   └── api.py            # API Request/Response structures
-│
-├── tests/
-│   ├── unit/             # Layer 1: Deterministic unit testing
-│   ├── integration/      # Layer 2: API/DB/LLM integration tests
-│   └── e2e/              # Layer 3: End-to-end tests
-│
-├── agents/
-│   ├── router.py         # Dynamic routing logic parsing LLM targets
-│   └── workers.py        # Abstract dynamically-initialized workers
-│
-└── tools/
-    ├── api_tools.py      # HTTP helper functions
-    ├── fs_tools.py       # Sandbox Local File I/O
-    └── registry.py       # Constants and functions for agent registry setup
+├── .env                        # Configuration variables
+├── .tmp/                       # Scraped data & intermediate LLM data (Ignored)
+├── agent_output/               # Safe restrict sandbox for agent output
+├── docker-compose.yml          # Infrastructure setup
+├── Makefile                    # Project command shortcuts
+├── README.md                   # Project documentation
+├── server/                     # Backend service (Python)
+|   ├── main.py                 # Application startup & dependency injection logic
+|   ├── pyproject.toml          # uv Dependency configuration
+|   ├── core/
+|   |   ├── config.py           # Global settings loading
+|   |   └── observability.py    # Logfire Configuration
+|   ├── db/
+|   |   ├── agent_config.py     # Database mapping and agent configurations 
+|   |   ├── schema.py           # Table definition and initial setup population
+|   |   └── session.py          # AsyncPG connection pools
+|   ├── models/
+|   |   └── api.py              # API Request/Response structures
+|   ├── tests/
+|   |   ├── unit/               # Layer 1: Deterministic unit testing
+|   |   ├── integration/        # Layer 2: API/DB/LLM integration tests
+|   |   └── e2e/                # Layer 3: End-to-end tests
+|   ├── agents/
+|   |   ├── router.py           # Dynamic routing logic parsing LLM targets
+|   |   └── workers.py          # Abstract dynamically-initialized workers
+|   └── tools/
+|       ├── api_tools.py        # HTTP helper functions
+|       ├── fs_tools.py         # Sandbox Local File I/O
+|       └── registry.py         # Constants and functions for agent registry setup
+└── web/                        # Frontend service (Next.js)
+
 ```
 
 ## 🚀 Quick Start Guide
@@ -152,7 +151,7 @@ _Ensure `GEMINI_API_KEY` is populated._
 **3. Setup Infrastructure**
 Initialize the infrastructure setup:
 ```bash
-docker-compose up -d
+make up
 ```
 
 **4. Run the Application**
@@ -181,9 +180,10 @@ The easiest way to run the entire stack (API, Postgres with Vector support, and 
     make down
     ```
 
-For manual control, you can still use standard Docker Compose commands:
+If you want to run the services manually, you can run the following command:
 ```bash
-docker compose up -d
+make server-dev
+make web-dev
 ```
 _Automatically populate your PostgreSQL database with the default Agent Roles and Tools via `db/schema.py`._
 
@@ -192,8 +192,11 @@ Navigate to the Swagger UI available at:
 `http://localhost:8000/docs`
 You can post a request directly to the `/chat` route to see the Router automatically decide whether to handle it or delegate it to a Worker Agent.
 
+For the frontend, navigate to:
+`http://localhost:3000`
+
 **6. Running Tests**
 Execute the pytest suite to validate the deterministic and behavioral layers of the agent:
 ```bash
-uv run pytest -v tests/
+make test-server
 ```
