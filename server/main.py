@@ -48,3 +48,7 @@ app.add_middleware(
 app.include_router(chat_router, prefix="/chat", tags=["Chat"])
 app.include_router(images_router, prefix="/images", tags=["Images"])
 app.include_router(ingestion_router, prefix="/kb", tags=["Knowledge Base"])
+
+@app.get("/health")
+async def health_check():
+    return {"status": "ok"}
