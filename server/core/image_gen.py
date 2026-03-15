@@ -1,12 +1,14 @@
 import logfire
+import io
+from PIL import Image
 from google import genai
 from google.genai import types
 from core.constants import IMAGE_GEN_MODEL
 
 async def generate_image_bytes(prompt: str, reference_images: list[bytes] = None) -> bytes:
     """
-    Uses the modern Google GenAI SDK to generate images.
-    Takes a string prompt and an optional list of raw image bytes (reference images).
+    Uses the modern Google SDK to generate images.
+    Takes a string prompt and an optional list of reference images.
     Returns the raw binary bytes of the generated image.
     """
     
@@ -33,12 +35,26 @@ async def generate_image_bytes(prompt: str, reference_images: list[bytes] = None
         )
         
         # Extract the image from the returned parts
-        if response.candidates and response.candidates[0].content.parts:
+        if response.candidates and response.candidates[0].content and response.candidates[0].content.parts:
             for part in response.candidates[0].content.parts:
                 if part.inline_data:
-                    return part.inline_data.data
+                    # If it's already PNG, just return the bytes
+                    if getattr(part.inline_data, 'mime_type', None) == 'image/png':
+                        return part.inline_data.data
+                        
+                    # Otherwise, convert to PNG using Pillow to ensure quality and compatibility
+                    img = Image.open(io.BytesIO(part.inline_data.data))
+                    png_bio = io.BytesIO()
+                    img.save(png_bio, format="PNG")
+                    return png_bio.getvalue()
+        
+        # Check if it was blocked
+        if response.candidates and response.candidates[0].finish_reason:
+            reason = response.candidates[0].finish_reason
+            raise ValueError(f"Image generation was blocked or failed. Reason: {reason}")
                     
         raise ValueError("The model responded, but no image data was found in the return parts.")
     
     except Exception as e:
         logfire.warning(f"generate_content failed ({e})")
+        raise
